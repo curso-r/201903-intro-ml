@@ -159,6 +159,99 @@ ggplot(erros2, aes(x = grau, y = media)) +
   geom_ribbon(aes(ymin = quantil5, ymax = quantil95), alpha = 0.2)
 
 
+
+# Exemplo regressão polinomial ---------------------------------------------
+
+library(tidyverse)
+
+# Gerando os dados
+
+set.seed(7)
+
+dados <- tibble(
+  x = runif(10),
+  y = 2*x + 3*x^2 + rnorm(10, 0, 0.15) 
+)
+
+ggplot(dados, aes(x = x, y = y)) + 
+  geom_point() + 
+  theme_bw() +
+  ggtitle("(a)") +
+  scale_y_continuous(limits = c(-4, 12), breaks = c(0, 4, 8))
+
+# Ajustando modelos
+
+ggplot(dados, aes(x = x, y = y)) + geom_point() + 
+  geom_smooth(formula = y ~ x, colour = "red", se = FALSE, method = 'lm') +
+  #geom_smooth(formula = y ~ poly(x, 2), colour = "orange", se = FALSE, method = 'lm') +
+  #geom_smooth(formula = y ~ poly(x, 9), colour = "blue", se = FALSE, method = 'lm') +
+  theme_bw() +
+  ggtitle("(b)") +
+  scale_y_continuous(limits = c(-4, 12), breaks = c(0, 4, 8))
+
+# Obtendo novos dados
+
+dados2 <- tibble(
+  x = runif(100),
+  y = 2*x + 3*x^2 + rnorm(100, 0, 0.1) 
+)
+
+# Comparando os modelos com a nova base
+
+ggplot(dados, aes(x = x, y = y)) + geom_point() + 
+  geom_smooth(formula = y ~ x, colour = "red", se = FALSE, method = 'lm') +
+  geom_smooth(formula = y ~ poly(x, 2), colour = "orange", se = FALSE, method = 'lm') +
+  geom_smooth(formula = y ~ poly(x, 9), colour = "blue", se = FALSE, method = 'lm') +
+  geom_point(data = dados2, aes(x = x, y = y)) +
+  theme_bw() +
+  ggtitle("(c)") +
+  scale_y_continuous(limits = c(-4, 12), breaks = c(0, 4, 8))
+
+# Ajustando os modelos na nova base
+
+ggplot(dados2, aes(x = x, y = y)) + geom_point() + 
+  geom_smooth(formula = y ~ x, colour = "red", se = FALSE, method = 'lm') +
+  geom_smooth(formula = y ~ poly(x, 2), colour = "orange", se = FALSE, method = 'lm') +
+  geom_smooth(formula = y ~ poly(x, 9), colour = "blue", se = FALSE, method = 'lm') +
+  theme_bw()  +
+  ggtitle("(d)") +
+  scale_y_continuous(limits = c(-4, 12), breaks = c(0, 4, 8))
+
+# Vamos ver o RMSE
+
+poly_lm <- function(dados, d) {
+  lm(y ~ poly(x, degree = d, raw = TRUE), data = dados)
+}
+
+modelo <- lm(y ~ x, data = dados)
+modelo2 <- lm(y ~ poly(x, 2), data = dados)
+
+calcula_rmse <- function(modelo) {
+  mean(residuals(modelo)^2) %>%
+    sqrt() %>% 
+    round(3)
+}
+
+calcula_rmse2 <- function(modelo, dados) {
+  mean((predict(modelo, newdata = dados) - dados$y)^2) %>% 
+    sqrt() %>% 
+    round(3)
+}
+
+rmse1 <-
+  map(1:9, poly_lm, dados = dados) %>% 
+  map(calcula_rmse) %>% 
+  purrr::flatten_dbl()
+
+rmse2 <-
+  map(1:9, poly_lm, dados = dados) %>% 
+  map(calcula_rmse2, dados = dados2) %>% 
+  purrr::flatten_dbl()
+
+tibble(
+  `Grau do polinômio` = 1:9, 
+  RMSE = rmse1, 
+  RMSE2 = rmse2
+)
+
 # Implementando LOOC ------------------------------------------------------
-
-
