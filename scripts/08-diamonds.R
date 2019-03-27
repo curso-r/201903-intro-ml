@@ -116,7 +116,7 @@ tc <- trainControl(
   number = 5, 
   verboseIter = TRUE, 
   search = "random"
-)
+  )
 
 xgb <- receita %>% 
   train(
@@ -160,5 +160,6 @@ previsoes %>%
   geom_point() +
   facet_wrap(~modelo, ncol = 3) +
   geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed")
+
 
 
